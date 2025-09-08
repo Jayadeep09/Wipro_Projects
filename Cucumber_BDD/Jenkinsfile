@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
+        MVN_CMD = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11\\bin\\mvn.cmd"
         JAVA_HOME = "C:\\Program Files\\Java\\jdk-21"
-        M2_HOME = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
-        PATH = "${env.M2_HOME}\\bin;${env.JAVA_HOME}\\bin;${env.PATH}"
+        PATH = "${env.JAVA_HOME}\\bin;${env.PATH}"
     }
 
     triggers {
@@ -23,8 +23,8 @@ pipeline {
         stage('Build Project') {
             steps {
                 dir('Cucumber_BDD') {
-                    // Use PowerShell instead of bat
-                    powershell 'mvn clean install -DskipTests=true'
+                    // Use bat with full path to mvn.cmd
+                    bat "\"${env.MVN_CMD}\" clean install -DskipTests=true"
                 }
             }
         }
@@ -32,7 +32,7 @@ pipeline {
         stage('Run Cucumber Tests') {
             steps {
                 dir('Cucumber_BDD') {
-                    powershell 'mvn test'
+                    bat "\"${env.MVN_CMD}\" test"
                 }
             }
         }
@@ -50,7 +50,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
-            cleanWs() // Clean workspace after build
+            cleanWs()
         }
         success {
             echo '✅ Cucumber BDD pipeline finished successfully!'
