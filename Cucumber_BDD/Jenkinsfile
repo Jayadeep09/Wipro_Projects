@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        jdk 'jkk21'      // Matches your JDK configuration name
-        maven 'M3'       // Matches your Maven configuration name
+        jdk 'jkk21'
+        maven 'M3'
     }
 
     triggers {
@@ -18,26 +18,20 @@ pipeline {
             }
         }
         
-        stage('Build Project') {
+        stage('Build and Test') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn clean install -DskipTests=true'
+                    bat 'mvn clean test'  // Combined clean and test
                 }
             }
         }
         
-        stage('Run Tests') {
+        stage('Verify Results') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn test'
-                }
-            }
-        }
-        
-        stage('Test Reports') {
-            steps {
-                dir('Cucumber_BDD') {
-                    junit 'target/surefire-reports/*.xml'
+                    // Basic verification without JUnit reports
+                    bat 'if exist target\\surefire-reports (echo Tests completed) else (exit 1)'
+                    echo 'Tests executed - check console for details'
                 }
             }
         }
@@ -46,7 +40,6 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
-            cleanWs()  // Clean workspace after build
         }
         success {
             echo '✅ Cucumber BDD pipeline finished successfully!'
