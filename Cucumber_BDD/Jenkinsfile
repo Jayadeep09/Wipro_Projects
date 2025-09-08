@@ -7,31 +7,41 @@ pipeline {
     }
 
     triggers {
-        cron('45 21 * * *')  // 9:30 PM every day
+        cron('55 21 * * *')  // 9:30 PM every day
     }
     
     stages {
         stage('Checkout Code') {
             steps {
-                // Use direct git path to avoid Jenkins configuration issues
-                bat '"C:\\Program Files\\Git\\bin\\git.exe" clone https://github.com/Jayadeep09/Wipro_Projects.git .'
-                bat '"C:\\Program Files\\Git\\bin\\git.exe" checkout main'
+                powershell '''
+                    # Clean and clone your repository
+                    Remove-Item * -Force -Recurse -ErrorAction SilentlyContinue
+                    git clone https://github.com/Jayadeep09/Wipro_Projects.git .
+                    git checkout main
+                    Write-Host "✅ Repository cloned successfully!"
+                '''
             }
         }
         
         stage('Build and Test') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn clean test'
+                    powershell 'mvn clean test'
                 }
             }
-        }
-        
-        stage('Verify Results') {
-            steps {
-                dir('Cucumber_BDD') {
-                    bat 'if exist target\\surefire-reports (echo ✅ Tests completed successfully!) else (echo ❌ No test reports found && exit 1)'
-                    echo 'Check console output for detailed test results'
+            
+            post {
+                success {
+                    dir('Cucumber_BDD') {
+                        // Try to publish test results if JUnit plugin is available
+                        script {
+                            try {
+                                junit 'target/surefire-reports/TEST-*.xml'
+                            } catch (Exception e) {
+                                echo "JUnit reporting not available: ${e}"
+                            }
+                        }
+                    }
                 }
             }
         }
