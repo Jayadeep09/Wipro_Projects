@@ -2,26 +2,27 @@ pipeline {
     agent any
 
     tools {
-        jdk 'jdk21'
+        jdk 'jkk21'
         maven 'M3'
     }
 
     triggers {
-        cron('39 21 * * *')  // 9:30 PM every day
+        cron('45 21 * * *')  // 9:30 PM every day
     }
     
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Jayadeep09/Wipro_Projects.git'
+                // Use direct git path to avoid Jenkins configuration issues
+                bat '"C:\\Program Files\\Git\\bin\\git.exe" clone https://github.com/Jayadeep09/Wipro_Projects.git .'
+                bat '"C:\\Program Files\\Git\\bin\\git.exe" checkout main'
             }
         }
         
         stage('Build and Test') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn clean test'  // Combined clean and test
+                    bat 'mvn clean test'
                 }
             }
         }
@@ -29,9 +30,8 @@ pipeline {
         stage('Verify Results') {
             steps {
                 dir('Cucumber_BDD') {
-                    // Basic verification without JUnit reports
-                    bat 'if exist target\\surefire-reports (echo Tests completed) else (exit 1)'
-                    echo 'Tests executed - check console for details'
+                    bat 'if exist target\\surefire-reports (echo ✅ Tests completed successfully!) else (echo ❌ No test reports found && exit 1)'
+                    echo 'Check console output for detailed test results'
                 }
             }
         }
