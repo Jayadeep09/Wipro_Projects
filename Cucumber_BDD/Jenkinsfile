@@ -1,9 +1,10 @@
 pipeline {
     agent any
-    
+
     environment {
-        MVN_HOME = tool 'M3'
-        PATH = "${env.MVN_HOME}/bin:${env.PATH}"
+        JAVA_HOME = "C:\\Program Files\\Java\\jdk-21"
+        M2_HOME = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
+        PATH = "${env.M2_HOME}\\bin;${env.JAVA_HOME}\\bin;${env.PATH}"
     }
 
     triggers {
@@ -15,7 +16,9 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout your GitHub repo
-                git branch: 'main', url: 'https://github.com/Jayadeep09/Wipro_Projects.git'
+                git branch: 'main', 
+                     url: 'https://github.com/Jayadeep09/Wipro_Projects.git',
+                     credentialsId: '7b34b299-92ff-40d0-a5db-772315402717'
             }
         }
         
@@ -34,17 +37,40 @@ pipeline {
                 }
             }
         }
+        
+        stage('Test Reports') {
+            steps {
+                dir('Cucumber_BDD') {
+                    junit 'target/surefire-reports/*.xml'
+                    archiveArtifacts 'target/*.jar'
+                }
+            }
+        }
     }
     
     post {
-        success {
-            echo '📅 Cucumber BDD pipeline finished successfully!'
-        }
         always {
-            junit 'Cucumber_BDD/target/surefire-reports/*.xml'
+            echo 'Pipeline execution completed'
+            cleanWs() // Clean workspace after build
+        }
+        success {
+            echo '✅ Cucumber BDD pipeline finished successfully!'
+            emailext (
+                subject: "SUCCESS: ${JOB_NAME} - Build #${BUILD_NUMBER}",
+                body: "The build ${BUILD_URL} completed successfully!",
+                to: "jayavenkatasaijayadeep.k@gmail.com" // Replace with your email
+            )
         }
         failure {
             echo '❌ Pipeline failed! Check the logs for details.'
+            emailext (
+                subject: "FAILED: ${JOB_NAME} - Build #${BUILD_NUMBER}",
+                body: "The build ${BUILD_URL} failed. Please check Jenkins logs.",
+                to: "jayavenkatasaijayadeep.k@gmail.com"// Replace with your email
+            )
+        }
+        unstable {
+            echo '⚠️  Pipeline marked as unstable'
         }
     }
 }
