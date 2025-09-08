@@ -17,7 +17,7 @@ pipeline {
         stage('Build Project') {
             steps {
                 dir('Cucumber_BDD') { // go inside your Cucumber_BDD folder
-                    sh 'mvn clean install -DskipTests=true'
+                    bat 'mvn clean install -DskipTests=true'
                 }
             }
         }
@@ -25,7 +25,7 @@ pipeline {
         stage('Run Cucumber Tests') {
             steps {
                 dir('Cucumber_BDD') {
-                    sh 'mvn test'
+                    bat 'mvn test'
                 }
             }
         }
