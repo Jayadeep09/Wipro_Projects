@@ -1,0 +1,39 @@
+pipeline {
+    agent any
+
+    triggers {
+        // Run every day at 7 AM (change as per your requirement)
+        cron('0 7 * * *')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your GitHub repo
+                git branch: 'main', url: 'https://github.com/Jayadeep09/Wipro_Projects.git'
+            }
+        }
+
+        stage('Build Project') {
+            steps {
+                dir('Cucumber_BDD') { // go inside your Cucumber_BDD folder
+                    sh 'mvn clean install -DskipTests=true'
+                }
+            }
+        }
+
+        stage('Run Cucumber Tests') {
+            steps {
+                dir('Cucumber_BDD') {
+                    sh 'mvn test'
+                }
+            }
+        }
+
+        stage('Post-Build') {
+            steps {
+                echo '✅ Cucumber BDD pipeline finished successfully!'
+            }
+        }
+    }
+}
