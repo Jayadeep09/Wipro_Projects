@@ -1,65 +1,35 @@
 pipeline {
     agent any
 
-    environment {
-        JAVA_HOME = "C:\\Program Files\\Java\\jdk-21"
-        M2_HOME = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
-        PATH = "${env.M2_HOME}\\bin;${env.JAVA_HOME}\\bin;${env.PATH}"
+    tools {
+        jdk 'jkk21'      // Matches your JDK configuration name
+        maven 'M3'       // Matches your Maven configuration name
     }
 
     triggers {
-    cron('30 21 * * *')  // 9:30 PM every day (format: MINUTE HOUR * * *)
-}
+        cron('30 21 * * *')  // 9:30 PM every day
+    }
     
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/Jayadeep09/Wipro_Projects.git'
             }
         }
         
         stage('Build Project') {
             steps {
                 dir('Cucumber_BDD') {
-                    // Use Java to execute Maven directly
-                    script {
-                        def mavenHome = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
-                        def javaHome = "C:\\Program Files\\Java\\jdk-21"
-                        
-                        // Set environment variables for this execution
-                        withEnv(["PATH+MAVEN=${mavenHome}\\bin", "PATH+JAVA=${javaHome}\\bin"]) {
-                            // Try to find any available shell
-                            try {
-                                bat 'mvn clean install -DskipTests=true'
-                            } catch (Exception e) {
-                                echo "bat failed, trying other approaches..."
-                                try {
-                                    powershell 'mvn clean install -DskipTests=true'
-                                } catch (Exception e2) {
-                                    echo "powershell failed, trying sh..."
-                                    sh 'mvn clean install -DskipTests=true'
-                                }
-                            }
-                        }
-                    }
+                    bat 'mvn clean install -DskipTests=true'
                 }
             }
         }
         
-        stage('Run Cucumber Tests') {
+        stage('Run Tests') {
             steps {
                 dir('Cucumber_BDD') {
-                    script {
-                        try {
-                            bat 'mvn test'
-                        } catch (Exception e) {
-                            try {
-                                powershell 'mvn test'
-                            } catch (Exception e2) {
-                                sh 'mvn test'
-                            }
-                        }
-                    }
+                    bat 'mvn test'
                 }
             }
         }
@@ -76,6 +46,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
+            cleanWs()  // Clean workspace after build
         }
         success {
             echo '✅ Cucumber BDD pipeline finished successfully!'
