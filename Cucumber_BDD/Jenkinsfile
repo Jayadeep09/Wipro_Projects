@@ -1,11 +1,16 @@
 pipeline {
     agent any
+    
+    environment {
+        MVN_HOME = tool 'M3'
+        PATH = "${env.MVN_HOME}/bin:${env.PATH}"
+    }
 
     triggers {
         // Run every day at 7 AM (change as per your requirement)
         cron('0 7 * * *')
     }
-
+    
     stages {
         stage('Checkout') {
             steps {
@@ -13,15 +18,15 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Jayadeep09/Wipro_Projects.git'
             }
         }
-
+        
         stage('Build Project') {
             steps {
-                dir('Cucumber_BDD') { // go inside your Cucumber_BDD folder
+                dir('Cucumber_BDD') {
                     bat 'mvn clean install -DskipTests=true'
                 }
             }
         }
-
+        
         stage('Run Cucumber Tests') {
             steps {
                 dir('Cucumber_BDD') {
@@ -29,11 +34,17 @@ pipeline {
                 }
             }
         }
-
-        stage('Post-Build') {
-            steps {
-                echo '✅ Cucumber BDD pipeline finished successfully!'
-            }
+    }
+    
+    post {
+        success {
+            echo '📅 Cucumber BDD pipeline finished successfully!'
+        }
+        always {
+            junit 'Cucumber_BDD/target/surefire-reports/*.xml'
+        }
+        failure {
+            echo '❌ Pipeline failed! Check the logs for details.'
         }
     }
 }
