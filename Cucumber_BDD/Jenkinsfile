@@ -2,20 +2,18 @@ pipeline {
     agent any
 
     environment {
-        MVN_CMD = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11\\bin\\mvn.cmd"
         JAVA_HOME = "C:\\Program Files\\Java\\jdk-21"
-        PATH = "${env.JAVA_HOME}\\bin;${env.PATH}"
+        M2_HOME = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
+        PATH = "${env.M2_HOME}\\bin;${env.JAVA_HOME}\\bin;${env.PATH}"
     }
 
     triggers {
-        // Run every day at 7 AM (change as per your requirement)
         cron('0 7 * * *')
     }
     
     stages {
         stage('Checkout') {
             steps {
-                // Checkout your GitHub repo
                 checkout scm
             }
         }
@@ -23,8 +21,27 @@ pipeline {
         stage('Build Project') {
             steps {
                 dir('Cucumber_BDD') {
-                    // Use bat with full path to mvn.cmd
-                    bat "\"${env.MVN_CMD}\" clean install -DskipTests=true"
+                    // Use Java to execute Maven directly
+                    script {
+                        def mavenHome = "C:\\apache-maven-3.9.11-bin\\apache-maven-3.9.11"
+                        def javaHome = "C:\\Program Files\\Java\\jdk-21"
+                        
+                        // Set environment variables for this execution
+                        withEnv(["PATH+MAVEN=${mavenHome}\\bin", "PATH+JAVA=${javaHome}\\bin"]) {
+                            // Try to find any available shell
+                            try {
+                                bat 'mvn clean install -DskipTests=true'
+                            } catch (Exception e) {
+                                echo "bat failed, trying other approaches..."
+                                try {
+                                    powershell 'mvn clean install -DskipTests=true'
+                                } catch (Exception e2) {
+                                    echo "powershell failed, trying sh..."
+                                    sh 'mvn clean install -DskipTests=true'
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -32,7 +49,17 @@ pipeline {
         stage('Run Cucumber Tests') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat "\"${env.MVN_CMD}\" test"
+                    script {
+                        try {
+                            bat 'mvn test'
+                        } catch (Exception e) {
+                            try {
+                                powershell 'mvn test'
+                            } catch (Exception e2) {
+                                sh 'mvn test'
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -41,7 +68,6 @@ pipeline {
             steps {
                 dir('Cucumber_BDD') {
                     junit 'target/surefire-reports/*.xml'
-                    archiveArtifacts 'target/*.jar'
                 }
             }
         }
@@ -50,16 +76,12 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
-            cleanWs()
         }
         success {
             echo '✅ Cucumber BDD pipeline finished successfully!'
         }
         failure {
             echo '❌ Pipeline failed! Check the logs for details.'
-        }
-        unstable {
-            echo '⚠️  Pipeline marked as unstable'
         }
     }
 }
