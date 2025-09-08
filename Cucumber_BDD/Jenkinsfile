@@ -16,16 +16,15 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout your GitHub repo
-                git branch: 'main', 
-                     url: 'https://github.com/Jayadeep09/Wipro_Projects.git',
-                     credentialsId: '7b34b299-92ff-40d0-a5db-772315402717'
+                checkout scm
             }
         }
         
         stage('Build Project') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn clean install -DskipTests=true'
+                    // Use PowerShell instead of bat
+                    powershell 'mvn clean install -DskipTests=true'
                 }
             }
         }
@@ -33,7 +32,7 @@ pipeline {
         stage('Run Cucumber Tests') {
             steps {
                 dir('Cucumber_BDD') {
-                    bat 'mvn test'
+                    powershell 'mvn test'
                 }
             }
         }
@@ -55,19 +54,9 @@ pipeline {
         }
         success {
             echo '✅ Cucumber BDD pipeline finished successfully!'
-            emailext (
-                subject: "SUCCESS: ${JOB_NAME} - Build #${BUILD_NUMBER}",
-                body: "The build ${BUILD_URL} completed successfully!",
-                to: "jayavenkatasaijayadeep.k@gmail.com" // Replace with your email
-            )
         }
         failure {
             echo '❌ Pipeline failed! Check the logs for details.'
-            emailext (
-                subject: "FAILED: ${JOB_NAME} - Build #${BUILD_NUMBER}",
-                body: "The build ${BUILD_URL} failed. Please check Jenkins logs.",
-                to: "jayavenkatasaijayadeep.k@gmail.com"// Replace with your email
-            )
         }
         unstable {
             echo '⚠️  Pipeline marked as unstable'
